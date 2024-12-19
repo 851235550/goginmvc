@@ -11,8 +11,12 @@ go install github.com/onsi/ginkgo/ginkgo
 
 ### Build
 ```
-make build env=dev   # dev 
 make build env=prod  # prod
+```
+
+### Dev run
+```
+make dev
 ```
 
 ### Run unit tests
