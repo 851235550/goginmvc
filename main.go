@@ -16,8 +16,6 @@ import (
 
 var env string
 
-func loadDBConfig()
-
 func main() {
 	flag.StringVar(&env, "env", "dev", "start with dev or prod")
 	flag.Parse()

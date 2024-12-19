@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"goginmvc/globalconst"
+	"goginmvc/utils"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
@@ -44,13 +45,43 @@ func InitDB(env string) (*sqlx.DB, error) {
 }
 
 func LoadDBConfig(env string) (*DBConfig, error) {
+	if env == globalconst.PROD {
+		return loadFromEnv()
+	}
+
+	// If development is enabled, load from local file
+	return loadFromLocalFile()
+}
+
+func MockDB(db *sql.DB, databaseName string) {
+	dbInstance = sqlx.NewDb(db, databaseName)
+}
+
+func loadFromEnv() (*DBConfig, error) {
+	var dbConfig DBConfig
+	keys := map[string]*string{
+		"DB_USERNAME": &dbConfig.Username,
+		"DB_PASSWORD": &dbConfig.Password,
+		"DB_HOST":     &dbConfig.Host,
+		"DB_PORT":     &dbConfig.Port,
+		"DB_NAME":     &dbConfig.DBName,
+	}
+	for key, val := range keys {
+		v, err := utils.LoadEnvVal(key)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load %s from environment variables. err: %w", key, err)
+		}
+		*val = v
+	}
+
+	return &dbConfig, nil
+}
+
+func loadFromLocalFile() (*DBConfig, error) {
 	v := viper.New()
 	v.SetConfigName(".env_dev")
-	if env == globalconst.PROD {
-		v.SetConfigName(".env_prod")
-	}
 	v.SetConfigType("toml")
-	v.AddConfigPath("../")
+	v.AddConfigPath("./")
 
 	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read database config. err: %w", err)
@@ -67,8 +98,4 @@ func LoadDBConfig(env string) (*DBConfig, error) {
 	}
 
 	return dbConfig, nil
-}
-
-func MockDB(db *sql.DB, databaseName string) {
-	dbInstance = sqlx.NewDb(db, databaseName)
 }
