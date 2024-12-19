@@ -8,6 +8,7 @@ import (
 	"goginmvc/utils"
 
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
 )
 
@@ -28,15 +29,20 @@ func InitDB(env string) (*sqlx.DB, error) {
 		return nil, fmt.Errorf("failed to load database config. err: %w", err)
 	}
 	// init db
-	dbInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+	dbStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		dbconfig.Host,
 		dbconfig.Port,
 		dbconfig.Username,
 		dbconfig.Password,
 		dbconfig.DBName)
-	db, err := sqlx.Connect("postgres", dbInfo)
+	db, err := sqlx.Open("postgres", dbStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database. err: %w", err)
+	}
+
+	if err = db.Ping(); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
 	dbInstance = db
@@ -81,7 +87,7 @@ func loadFromLocalFile() (*DBConfig, error) {
 	v := viper.New()
 	v.SetConfigName(".env_dev")
 	v.SetConfigType("toml")
-	v.AddConfigPath("./")
+	v.AddConfigPath(".")
 
 	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read database config. err: %w", err)
