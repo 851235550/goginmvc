@@ -29,12 +29,18 @@ func InitDB(env string) (*sqlx.DB, error) {
 		return nil, fmt.Errorf("failed to load database config. err: %w", err)
 	}
 	// init db
+	if dbconfig.Password == "" {
+		// if password is empty, use ''
+		dbconfig.Password = "''"
+	}
+
 	dbStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		dbconfig.Host,
 		dbconfig.Port,
 		dbconfig.Username,
 		dbconfig.Password,
 		dbconfig.DBName)
+
 	db, err := sqlx.Open("postgres", dbStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database. err: %w", err)
